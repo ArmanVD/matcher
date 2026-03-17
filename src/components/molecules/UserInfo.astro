@@ -1,0 +1,18 @@
+---
+import WishlistLink from "../atoms/WishlistLink.astro";
+
+interface Props {
+  name: string;
+  image?: string | null;
+}
+const { name, image } = Astro.props;
+---
+<div class="user-info">
+  {image && <img src={image} alt={name} />}
+  <p class="user-text">
+    <span>Ingelogd als</span>
+    <strong>{name}</strong>
+  </p>
+  <a href="/api/auth/logout" class="logout">Uitloggen</a>
+  <WishlistLink />
+</div>

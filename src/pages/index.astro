@@ -16,7 +16,10 @@ const errorMessages: Record<string, string> = {
 const errorMessage = error ? (errorMessages[error] ?? "Er ging iets mis.") : null;
 ---
 
-<Layout title="Matcher">
+<Layout
+  title="Ontdek welke albums beschikbaar zijn op vinyl"
+  description="Koppel je Spotify of Last.fm account en ontdek welke albums van jouw favoriete artiesten beschikbaar zijn op vinyl via Discogs. Bouw een vinyl wishlist op basis van jouw luistergeschiedenis."
+>
   <style is:global>
     body {
       display: flex;

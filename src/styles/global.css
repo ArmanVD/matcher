@@ -467,6 +467,86 @@ body::after {
   border-color: rgba(245, 239, 214, 0.4);
 }
 
+.logout:hover {
+  color: var(--orange);
+  border-color: var(--orange);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+  .user-info {
+    gap: 12px;
+  }
+}
+
+.user-info img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--orange);
+  object-fit: cover;
+}
+
+@media (min-width: 768px) {
+  .user-info img {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+.user-info .user-text {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .user-info .user-text {
+    display: block;
+  }
+  .user-info span {
+    font-size: 16px;
+    color: rgba(245, 239, 214, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  .user-info strong {
+    display: block;
+    font-size: 16px;
+    color: var(--cream);
+  }
+}
+
+.wishlist-link {
+  font-family: "Space Mono", monospace;
+  font-size: 16px;
+  color: rgba(245, 239, 214, 0.6);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid rgba(245, 239, 214, 0.15);
+  padding: 5px 8px;
+  border-radius: 2px;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .wishlist-link {
+    letter-spacing: 2px;
+    padding: 5px 10px;
+  }
+}
+
+.wishlist-link:hover {
+  color: var(--pink);
+  border-color: var(--pink);
+}
+
 @keyframes fadeUp {
   from {
     opacity: 0;

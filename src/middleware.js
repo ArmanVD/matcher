@@ -7,11 +7,11 @@ export const onRequest = defineMiddleware(async (_context, next) => {
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline' https://analytics.matcherapp.nl",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' https://i.scdn.co data:",
+      "img-src 'self' https://i.scdn.co https://lastfm.freetls.fastly.net data:",
       "font-src 'self'",
-      "connect-src 'self' https://api.spotify.com https://api.discogs.com https://accounts.spotify.com",
+      "connect-src 'self' https://api.spotify.com https://api.discogs.com https://accounts.spotify.com https://analytics.matcherapp.nl",
       "frame-ancestors 'none'",
     ].join("; "),
   );

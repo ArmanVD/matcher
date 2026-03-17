@@ -1,0 +1,101 @@
+---
+interface Props {
+  searchPlaceholder?: string;
+}
+const { searchPlaceholder = "Zoek artiest..." } = Astro.props;
+---
+
+<style is:global>
+  .filter-bar {
+    margin-bottom: 24px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  @media (min-width: 768px) {
+    .filter-bar {
+      margin-bottom: 40px;
+      flex-wrap: nowrap;
+    }
+  }
+
+  .filter-btn {
+    font-family: "Space Mono", monospace;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: rgba(245, 239, 214, 0.6);
+    background: none;
+    border: 1px solid rgba(245, 239, 214, 0.15);
+    border-radius: 2px;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  @media (min-width: 768px) {
+    .filter-btn {
+      letter-spacing: 2px;
+      padding: 10px 20px;
+    }
+  }
+
+  @media (hover: hover) {
+    .filter-btn:hover {
+      color: var(--black);
+      background: var(--orange);
+      border-color: var(--orange);
+    }
+  }
+
+  .filter-btn[aria-pressed="true"] {
+    color: var(--black);
+    background: var(--orange);
+    border-color: var(--orange);
+  }
+
+  .search-input {
+    font-family: "Space Mono", monospace;
+    font-size: 16px;
+    letter-spacing: 1px;
+    color: var(--cream);
+    background: none;
+    border: 1px solid rgba(245, 239, 214, 0.15);
+    border-radius: 2px;
+    padding: 8px 12px;
+    outline: none;
+    transition: border-color 0.2s;
+    flex: 1;
+    min-width: 0;
+  }
+
+  @media (min-width: 768px) {
+    .search-input {
+      padding: 10px 20px;
+      max-width: 320px;
+    }
+  }
+
+  .search-input::placeholder {
+    color: rgba(245, 239, 214, 0.3);
+  }
+
+  .search-input:focus {
+    border-color: rgba(245, 239, 214, 0.4);
+  }
+</style>
+
+<div class="filter-bar">
+  <button class="filter-btn" id="vinyl-filter" aria-pressed="false">
+    <span aria-hidden="true">◉ </span>Alleen met vinyl
+  </button>
+  <input
+    type="search"
+    id="artist-search"
+    class="search-input"
+    placeholder={searchPlaceholder}
+    aria-label="Zoek op artiestennaam"
+    autocomplete="off"
+  />
+</div>

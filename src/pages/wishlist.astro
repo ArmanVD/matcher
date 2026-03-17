@@ -236,6 +236,11 @@ const publicSlug = lastfmUsername ? `lastfm-${lastfmUsername}` : (spotifyUserId 
       max-width: 480px;
       width: calc(100% - 40px);
       color: var(--cream);
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      translate: -50% -50%;
+      margin: 0;
     }
 
     dialog::backdrop {

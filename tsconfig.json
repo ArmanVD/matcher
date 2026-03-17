@@ -1,7 +1,11 @@
 {
   "extends": "astro/tsconfigs/base",
   "compilerOptions": {
-    "strict": false
+    "strict": false,
+    "paths": {
+      "$components": ["./src/components/index.js"],
+      "$components/*": ["./src/components/*"]
+    }
   },
   "include": [".astro/types.d.ts", "**/*"],
   "exclude": ["dist"]

@@ -61,6 +61,7 @@ export async function getTopAlbums(username, period) {
   }));
 }
 
+
 export function groupAlbumsByArtist(albums) {
   const artistMap = new Map();
   for (const album of albums) {

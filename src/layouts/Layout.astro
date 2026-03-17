@@ -53,6 +53,25 @@ const fullTitle = title === "Matcher" ? title : `${title} — Matcher`;
     <link rel="preconnect" href="https://i.scdn.co" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#e8541a" />
+
+    <!-- Structured data -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Matcher",
+      "url": "https://matcherapp.nl",
+      "description": description,
+      "applicationCategory": "MusicApplication",
+      "operatingSystem": "Web",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "EUR" },
+      "creator": { "@type": "Person", "name": "Arman Voogd", "url": "https://avek.dev" }
+    })} />
+
+    <!-- Umami analytics -->
+    {import.meta.env.UMAMI_WEBSITE_ID && (
+      <script is:inline defer src={import.meta.env.UMAMI_URL + "/script.js"} data-website-id={import.meta.env.UMAMI_WEBSITE_ID} />
+    )}
+
     <slot name="head" />
   </head>
   <body>

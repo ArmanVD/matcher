@@ -1,5 +1,6 @@
 ---
 import Layout from "../layouts/Layout.astro";
+import { AppHeader, FilterBar } from "$components";
 import { getUser as getSpotifyUser } from "../lib/spotify.js";
 import { getUser as getLastfmUser } from "../lib/lastfm.js";
 import { getValidToken } from "../lib/spotifyAuth.js";
@@ -18,79 +19,6 @@ const user = isLastfm
 
 <Layout title="Jouw vinyl matches" description="Bekijk welke albums uit jouw Spotify luistergeschiedenis beschikbaar zijn op vinyl via Discogs.">
   <style is:global>
-    .logo::after {
-      content: "●";
-      font-size: 16px;
-      color: var(--orange);
-      position: absolute;
-      top: 8px;
-      right: -16px;
-      animation: blink 1.5s step-end infinite;
-    }
-
-    @keyframes blink {
-      0%,
-      100% {
-        opacity: 1;
-      }
-      50% {
-        opacity: 0;
-      }
-    }
-
-    .user-info {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    @media (min-width: 768px) {
-      .user-info {
-        gap: 12px;
-      }
-    }
-
-    .user-info img {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      border: 2px solid var(--orange);
-      object-fit: cover;
-    }
-
-    @media (min-width: 768px) {
-      .user-info img {
-        width: 40px;
-        height: 40px;
-      }
-    }
-
-    .user-info .user-text {
-      display: none;
-    }
-
-    @media (min-width: 640px) {
-      .user-info .user-text {
-        display: block;
-      }
-      .user-info span {
-        font-size: 16px;
-        color: rgba(245, 239, 214, 0.6);
-        text-transform: uppercase;
-        letter-spacing: 2px;
-      }
-      .user-info strong {
-        display: block;
-        font-size: 16px;
-        color: var(--cream);
-      }
-    }
-
-    .logout:hover {
-      color: var(--orange);
-      border-color: var(--orange);
-    }
 
     .period-nav {
       display: flex;
@@ -357,31 +285,6 @@ const user = isLastfm
       color: var(--pink);
     }
 
-    .wishlist-link {
-      font-family: "Space Mono", monospace;
-      font-size: 16px;
-      color: rgba(245, 239, 214, 0.6);
-      text-decoration: none;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      border: 1px solid rgba(245, 239, 214, 0.15);
-      padding: 5px 8px;
-      border-radius: 2px;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-
-    @media (min-width: 768px) {
-      .wishlist-link {
-        letter-spacing: 2px;
-        padding: 5px 10px;
-      }
-    }
-
-    .wishlist-link:hover {
-      color: var(--pink);
-      border-color: var(--pink);
-    }
 
     .skeleton {
       background: linear-gradient(90deg, rgba(245, 239, 214, 0.04) 25%, rgba(245, 239, 214, 0.08) 50%, rgba(245, 239, 214, 0.04) 75%);
@@ -476,50 +379,6 @@ const user = isLastfm
       transform: translateX(-50%) translateY(0);
     }
 
-    .filter-bar {
-      margin-bottom: 24px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    @media (min-width: 768px) {
-      .filter-bar {
-        margin-bottom: 40px;
-        flex-wrap: nowrap;
-      }
-    }
-
-    .search-input {
-      font-family: "Space Mono", monospace;
-      font-size: 16px;
-      letter-spacing: 1px;
-      color: var(--cream);
-      background: none;
-      border: 1px solid rgba(245, 239, 214, 0.15);
-      border-radius: 2px;
-      padding: 8px 12px;
-      outline: none;
-      transition: border-color 0.2s;
-      flex: 1;
-      min-width: 0;
-    }
-
-    @media (min-width: 768px) {
-      .search-input {
-        padding: 10px 20px;
-        max-width: 320px;
-      }
-    }
-
-    .search-input::placeholder {
-      color: rgba(245, 239, 214, 0.3);
-    }
-
-    .search-input:focus {
-      border-color: rgba(245, 239, 214, 0.4);
-    }
-
     .search-no-results {
       font-family: "Space Mono", monospace;
       font-size: 16px;
@@ -530,40 +389,6 @@ const user = isLastfm
       display: none;
     }
 
-    .filter-btn {
-      font-family: "Space Mono", monospace;
-      font-size: 16px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: rgba(245, 239, 214, 0.6);
-      background: none;
-      border: 1px solid rgba(245, 239, 214, 0.15);
-      border-radius: 2px;
-      padding: 8px 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    @media (min-width: 768px) {
-      .filter-btn {
-        letter-spacing: 2px;
-        padding: 10px 20px;
-      }
-    }
-
-    @media (hover: hover) {
-      .filter-btn:hover {
-        color: var(--black);
-        background: var(--orange);
-        border-color: var(--orange);
-      }
-    }
-
-    .filter-btn[aria-pressed="true"] {
-      color: var(--black);
-      background: var(--orange);
-      border-color: var(--orange);
-    }
 
     @supports selector(:has(*)) {
       #results.vinyl-only li:has(.no-vinyl) {
@@ -585,25 +410,7 @@ const user = isLastfm
     }
   </style>
 
-  <header class="site-header">
-    <div class="wrapper">
-      <div class="header-inner">
-        <p class="logo">MATCH<span>ER</span></p>
-        <div class="user-info">
-          {user.image && <img src={user.image} alt={user.name} />}
-          <p class="user-text">
-            <span>Ingelogd als</span>
-            <strong>{user.name}</strong>
-          </p>
-          <a href="/api/auth/logout" class="logout">Uitloggen</a>
-          <a href="/wishlist" class="wishlist-link">
-            <span aria-hidden="true">♡</span>
-            <span id="wishlist-count">0</span><span class="sr-only"> items in wishlist</span>
-          </a>
-        </div>
-      </div>
-    </div>
-  </header>
+  <AppHeader user={user} />
 
   <main class="wrapper content-wrapper" id="main-content">
     <nav class="period-nav">
@@ -623,19 +430,7 @@ const user = isLastfm
     <h1 class="page-title">Jouw vinyl matches</h1>
     <p class="page-subtitle">Gebaseerd op jouw {isLastfm ? "Last.fm" : "Spotify"} luistergeschiedenis</p>
 
-    <div class="filter-bar">
-      <button class="filter-btn" id="vinyl-filter" aria-pressed="false">
-        <span aria-hidden="true">◉ </span>Alleen met vinyl
-      </button>
-      <input
-        type="search"
-        id="artist-search"
-        class="search-input"
-        placeholder="Zoek artiest..."
-        aria-label="Zoek op artiestennaam"
-        autocomplete="off"
-      />
-    </div>
+    <FilterBar />
     <p class="search-no-results" id="search-no-results">Geen artiesten gevonden</p>
 
     <noscript>
