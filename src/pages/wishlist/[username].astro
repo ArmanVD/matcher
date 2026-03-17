@@ -1,0 +1,135 @@
+---
+import Layout from "../../layouts/Layout.astro";
+import { getWishlistBySlug } from "../../lib/db.js";
+
+const { username } = Astro.params;
+const items = getWishlistBySlug(username);
+
+if (items === null) return Astro.redirect("/");
+---
+
+<Layout title={`Wishlist van ${username.replace("lastfm-", "")}`} description="Bekijk deze gedeelde vinyl wishlist op Matcher.">
+  <style is:global>
+    .album-card {
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .album-artist {
+      font-size: 16px;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+
+    .vinyl-list {
+      margin-bottom: 12px;
+    }
+
+    .no-vinyl {
+      margin-bottom: 12px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 80px 0;
+    }
+
+    .empty-icon {
+      font-size: 64px;
+      display: block;
+      margin-bottom: 24px;
+      opacity: 0.3;
+    }
+
+    .empty-state p {
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.6);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+
+    .public-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.4);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+
+    .try-btn {
+      font-family: "Advercase", sans-serif;
+      font-size: 20px;
+      letter-spacing: 3px;
+      color: var(--black);
+      background: var(--mustard);
+      text-decoration: none;
+      padding: 12px 32px;
+      border-radius: 2px;
+      display: inline-block;
+      transition: background 0.2s;
+      margin-top: 24px;
+    }
+
+    .try-btn:hover {
+      background: var(--orange);
+    }
+  </style>
+
+  <header class="site-header">
+    <div class="wrapper">
+      <div class="header-inner">
+        <a href="/" class="logo">MATCH<span>ER</span></a>
+        <a href="/" class="back-btn">← Home</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrapper content-wrapper" id="main-content">
+    <h1 class="page-title"><span aria-hidden="true">♡ </span>Wishlist van {username.replace("lastfm-", "")}</h1>
+    <p class="page-subtitle">{items.length} album{items.length !== 1 ? "s" : ""} opgeslagen</p>
+    <p class="public-badge">◉ Gedeelde wishlist</p>
+
+    {items.length === 0 ? (
+      <div class="empty-state">
+        <span class="empty-icon">♡</span>
+        <p>Deze wishlist is leeg</p>
+      </div>
+    ) : (
+      <ul class="albums-grid" style="margin-top: 32px;">
+        {items.map((album, i) => (
+          <li>
+            <article class="album-card" style={`animation-delay: ${i * 0.05}s`}>
+              <div class="album-cover">
+                {album.image
+                  ? <img src={album.image} alt={album.name} width="640" height="640" loading={i < 4 ? "eager" : "lazy"} />
+                  : <div class="album-cover-placeholder"><span>LP</span></div>
+                }
+              </div>
+              <div class="album-info">
+                <p class="album-artist">{album.artist}</p>
+                <p class="album-name">{album.name}</p>
+                <p class="album-year">{album.releaseYear ?? ""}</p>
+                {album.vinyl && album.vinyl.length > 0
+                  ? <ul class="vinyl-list">{album.vinyl.map((r: any) => (
+                      <li><a href={`https://www.discogs.com${r.uri}`} target="_blank" rel="noopener">{r.title} ({r.year ?? "onbekend"})</a></li>
+                    ))}</ul>
+                  : <p class="no-vinyl">geen vinyl gevonden</p>
+                }
+              </div>
+            </article>
+          </li>
+        ))}
+      </ul>
+    )}
+
+    <div style="text-align: center; margin-top: 64px; padding-bottom: 80px;">
+      <p style="font-family: 'Space Mono', monospace; font-size: 16px; color: rgba(245,239,214,0.4); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px;">Wil jij ook jouw vinyl matches zien?</p>
+      <a href="/" class="try-btn">Probeer Matcher</a>
+    </div>
+  </main>
+</Layout>

@@ -20,7 +20,6 @@ function setRateLimitedUntil(until) {
 export async function getTopTracks(accessToken, timeRange = "medium_term") {
   const rateLimitedUntil = getRateLimitedUntil();
   if (Date.now() < rateLimitedUntil) {
-    console.warn(`[Spotify] Rate limited, skipping until ${new Date(rateLimitedUntil).toISOString()}`);
     return [];
   }
 
@@ -38,11 +37,9 @@ export async function getTopTracks(accessToken, timeRange = "medium_term") {
     if (r.status === 429) {
       const retryAfter = parseInt(r.headers.get("Retry-After") ?? "60");
       setRateLimitedUntil(Date.now() + retryAfter * 1000);
-      console.error(`[Spotify getTopTracks] 429 — rate limited for ${retryAfter}s`);
       return { items: [] };
     }
     if (!r.ok) {
-      console.error(`[Spotify getTopTracks] status: ${r.status}`);
       return { items: [] };
     }
     return r.json();

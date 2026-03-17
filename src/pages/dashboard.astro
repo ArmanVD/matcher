@@ -478,12 +478,56 @@ const user = isLastfm
 
     .filter-bar {
       margin-bottom: 24px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
     }
 
     @media (min-width: 768px) {
       .filter-bar {
         margin-bottom: 40px;
+        flex-wrap: nowrap;
       }
+    }
+
+    .search-input {
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: var(--cream);
+      background: none;
+      border: 1px solid rgba(245, 239, 214, 0.15);
+      border-radius: 2px;
+      padding: 8px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+      flex: 1;
+      min-width: 0;
+    }
+
+    @media (min-width: 768px) {
+      .search-input {
+        padding: 10px 20px;
+        max-width: 320px;
+      }
+    }
+
+    .search-input::placeholder {
+      color: rgba(245, 239, 214, 0.3);
+    }
+
+    .search-input:focus {
+      border-color: rgba(245, 239, 214, 0.4);
+    }
+
+    .search-no-results {
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.4);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 40px 0;
+      display: none;
     }
 
     .filter-btn {
@@ -583,7 +627,16 @@ const user = isLastfm
       <button class="filter-btn" id="vinyl-filter" aria-pressed="false">
         <span aria-hidden="true">◉ </span>Alleen met vinyl
       </button>
+      <input
+        type="search"
+        id="artist-search"
+        class="search-input"
+        placeholder="Zoek artiest..."
+        aria-label="Zoek op artiestennaam"
+        autocomplete="off"
+      />
     </div>
+    <p class="search-no-results" id="search-no-results">Geen artiesten gevonden</p>
 
     <noscript>
       <p class="noscript-msg">JavaScript is vereist om je vinyl matches te laden. Schakel JavaScript in om door te gaan.</p>
@@ -912,6 +965,22 @@ data-album='${JSON.stringify({ id: album.id, name: album.name, artist: artist.na
         const active = this.getAttribute("aria-pressed") === "true";
         this.setAttribute("aria-pressed", String(!active));
         document.getElementById("results")!.classList.toggle("vinyl-only", !active);
+      });
+
+      document.getElementById("artist-search")!.addEventListener("input", function () {
+        const query = (this as HTMLInputElement).value.toLowerCase().trim();
+        const blocks = document.querySelectorAll<HTMLElement>("#results .artist-block");
+        let visibleCount = 0;
+
+        blocks.forEach((block) => {
+          const name = block.querySelector(".artist-name")?.textContent?.toLowerCase() ?? "";
+          const match = !query || name.includes(query);
+          block.style.display = match ? "" : "none";
+          if (match) visibleCount++;
+        });
+
+        const noResults = document.getElementById("search-no-results")!;
+        noResults.style.display = blocks.length > 0 && visibleCount === 0 ? "block" : "none";
       });
     </script>
   </main>

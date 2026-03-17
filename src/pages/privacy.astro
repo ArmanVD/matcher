@@ -74,30 +74,38 @@ import Layout from "../layouts/Layout.astro";
       <h1 class="page-title">Privacy</h1>
       <p class="page-subtitle">Hoe Matcher omgaat met jouw gegevens</p>
 
-      <h2>Wat slaan we op?</h2>
-      <p>Matcher slaat de volgende gegevens op in jouw browser (via cookies):</p>
+      <h2>Inloggen via Spotify</h2>
+      <p>Bij inloggen via Spotify slaan we de volgende gegevens op in beveiligde cookies:</p>
       <ul>
-        <li>Een tijdelijke Spotify-toegangstoken (vervalt na 1 uur)</li>
+        <li>Een tijdelijke toegangstoken (vervalt na 1 uur)</li>
         <li>Een vernieuwingstoken om je automatisch ingelogd te houden (vervalt na 30 dagen)</li>
-        <li>Je Spotify-weergavenaam en gebruikers-ID, zodat we je kunnen begroeten en je wishlist kunnen bewaren</li>
+        <li>Je Spotify-weergavenaam en gebruikers-ID</li>
       </ul>
-      <p>Daarnaast slaat Matcher je wishlist op onze server op, gekoppeld aan je Spotify gebruikers-ID. Dit stelt je in staat je wishlist op meerdere apparaten te gebruiken. De wishlist bevat albumtitels, artiesten, jaartallen en Discogs-links. Er worden geen luistergegevens of andere persoonlijke informatie opgeslagen.</p>
+      <p>We vragen alleen toegang tot je luistergeschiedenis (<strong style="color: var(--cream)">user-top-read</strong>) en recent afgespeelde nummers (<strong style="color: var(--cream)">user-read-recently-played</strong>). Muziekdata wordt niet opgeslagen op onze servers.</p>
+
+      <h2>Inloggen via Last.fm</h2>
+      <p>Bij inloggen via Last.fm slaan we je Last.fm gebruikersnaam en sessiesleutel op in een beveiligde cookie (maximaal 1 jaar). Je luistergeschiedenis wordt direct bij Last.fm opgevraagd en niet opgeslagen op onze servers.</p>
+
+      <h2>Wishlist</h2>
+      <p>Albums die je aan je wishlist toevoegt worden opgeslagen op onze server in een beveiligde database, gekoppeld aan je Spotify gebruikers-ID of Last.fm gebruikersnaam. Per album slaan we op: albumtitel, artiestnaam, albumhoes (URL), uitjaartal en bijbehorende Discogs vinyl links. Er worden geen luistergegevens opgeslagen.</p>
+      <p>Je wishlist-data verwijderen kan door uit te loggen of door contact op te nemen via onderstaand e-mailadres.</p>
 
       <h2>Waarvoor gebruiken we dit?</h2>
-      <p>Uitsluitend om de app te laten werken. De tokens zijn nodig om jouw Spotify-luistergeschiedenis op te halen en vinyl-matches te tonen via Discogs. Er is geen tracking, geen profilering en geen advertentiedoeleinde.</p>
+      <p>Uitsluitend om de app te laten werken. Er is geen tracking, geen profilering en geen advertentiedoeleinde.</p>
 
       <h2>Worden gegevens gedeeld?</h2>
       <p>Nee. Jouw gegevens worden nooit gedeeld met derden. De enige externe diensten waarmee Matcher communiceert zijn:</p>
       <ul>
         <li><a href="https://spotify.com" target="_blank" rel="noopener">Spotify</a> — voor jouw luistergeschiedenis (via jouw eigen account)</li>
+        <li><a href="https://last.fm" target="_blank" rel="noopener">Last.fm</a> — voor jouw luistergeschiedenis (via jouw eigen account)</li>
         <li><a href="https://discogs.com" target="_blank" rel="noopener">Discogs</a> — voor het opzoeken van vinyl-releases</li>
       </ul>
 
       <h2>Cookies</h2>
-      <p>Matcher gebruikt alleen functionele cookies die noodzakelijk zijn voor de werking van de app. Deze cookies vallen onder de uitzondering voor noodzakelijke cookies in de AVG — hiervoor is geen toestemming vereist.</p>
+      <p>Matcher gebruikt alleen functionele cookies die noodzakelijk zijn voor de werking van de app (authenticatie en sessie). Geen tracking, geen analytics, geen advertentiecookies. Deze cookies vallen onder de uitzondering voor noodzakelijke cookies in de AVG — hiervoor is geen toestemming vereist.</p>
 
       <h2>Gedeelde wishlists</h2>
-      <p>Als je een wishlist deelt, wordt de inhoud gecodeerd in de URL. Deze URL bevat je albumgegevens (artiest, albumtitel, jaar, Discogs-links). Je wishlist-data verwijderen kan door uit te loggen of door contact op te nemen via onderstaand e-mailadres.</p>
+      <p>Als je een wishlist deelt via de deelknop, wordt de inhoud gecodeerd in de URL. Deze URL bevat je albumgegevens (artiest, albumtitel, jaar, Discogs-links), maar geen persoonlijke identificeerbare informatie.</p>
 
       <h2>Contact</h2>
       <p>Vragen of opmerkingen? Stuur een e-mail naar <a href="mailto:contact@avek.dev">contact@avek.dev</a>.</p>

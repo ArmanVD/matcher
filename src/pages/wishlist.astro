@@ -3,7 +3,11 @@ import Layout from "../layouts/Layout.astro";
 import { getValidToken } from "../lib/spotifyAuth.js";
 
 const accessToken = await getValidToken(Astro.cookies);
-if (!accessToken) return Astro.redirect("/");
+const lastfmUsername = Astro.cookies.get("lastfm_username")?.value;
+if (!accessToken && !lastfmUsername) return Astro.redirect("/");
+
+const spotifyUserId = Astro.cookies.get("spotify_user_id")?.value;
+const publicSlug = lastfmUsername ? `lastfm-${lastfmUsername}` : (spotifyUserId ?? "");
 ---
 
 <Layout title="Wishlist" description="Jouw opgeslagen vinyl albums op Matcher.">
@@ -128,6 +132,47 @@ if (!accessToken) return Astro.redirect("/");
       border-color: var(--mustard);
     }
 
+    .sort-bar {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 24px;
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .sort-bar {
+        margin-bottom: 40px;
+      }
+    }
+
+    .sort-btn {
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(245, 239, 214, 0.6);
+      background: none;
+      border: 1px solid rgba(245, 239, 214, 0.15);
+      border-radius: 2px;
+      padding: 6px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .sort-btn.active {
+      color: var(--black);
+      background: var(--mustard);
+      border-color: var(--mustard);
+    }
+
+    @media (hover: hover) {
+      .sort-btn:not(.active):hover {
+        color: var(--cream);
+        border-color: rgba(245, 239, 214, 0.4);
+      }
+    }
+
     .wishlist-actions {
       display: flex;
       flex-direction: column;
@@ -141,6 +186,117 @@ if (!accessToken) return Astro.redirect("/");
         flex-direction: row;
         align-items: flex-start;
       }
+    }
+
+    .visibility-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+      margin-bottom: 0;
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.5);
+      letter-spacing: 1px;
+    }
+
+    .visibility-status {
+      text-transform: uppercase;
+    }
+
+    .visibility-toggle {
+      background: none;
+      border: 1px solid rgba(245, 239, 214, 0.15);
+      border-radius: 2px;
+      color: rgba(245, 239, 214, 0.5);
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .visibility-toggle:hover {
+      color: var(--cream);
+      border-color: rgba(245, 239, 214, 0.4);
+    }
+
+    .visibility-toggle.public {
+      color: var(--orange);
+      border-color: var(--orange);
+    }
+
+    dialog {
+      background: #1a1510;
+      border: 1px solid rgba(245, 239, 214, 0.15);
+      border-radius: 2px;
+      padding: 32px;
+      max-width: 480px;
+      width: calc(100% - 40px);
+      color: var(--cream);
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, 0.7);
+    }
+
+    dialog h2 {
+      font-family: "Advercase", sans-serif;
+      font-size: 24px;
+      letter-spacing: 2px;
+      margin-bottom: 16px;
+      color: var(--cream);
+    }
+
+    dialog p {
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.7);
+      line-height: 1.7;
+      margin-bottom: 24px;
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+
+    .dialog-confirm {
+      font-family: "Advercase", sans-serif;
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: var(--black);
+      background: var(--mustard);
+      border: none;
+      padding: 10px 24px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .dialog-confirm:hover {
+      background: var(--orange);
+    }
+
+    .dialog-cancel {
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: rgba(245, 239, 214, 0.6);
+      background: none;
+      border: 1px solid rgba(245, 239, 214, 0.2);
+      padding: 10px 20px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+    }
+
+    .dialog-cancel:hover {
+      color: var(--cream);
+      border-color: rgba(245, 239, 214, 0.4);
     }
 
     .share-toast {
@@ -182,22 +338,51 @@ if (!accessToken) return Astro.redirect("/");
         <p class="page-subtitle" id="wishlist-subtitle">Laden...</p>
       </div>
       <div class="wishlist-actions">
-        <button class="export-btn" id="share-btn" hidden>
-          <span aria-hidden="true">↗ </span>Delen
-        </button>
         <button class="export-btn" id="export-btn" hidden>
           <span aria-hidden="true">↓ </span>Exporteer
         </button>
       </div>
     </div>
+    <div class="visibility-bar" id="visibility-bar" hidden>
+      <span class="visibility-status" id="visibility-status"></span>
+      <button class="visibility-toggle" id="visibility-toggle"></button>
+      <button class="export-btn" id="share-btn" hidden style="margin-left: auto;">
+        <span aria-hidden="true">↗ </span>Kopieer link
+      </button>
+    </div>
+
+    <dialog id="share-dialog">
+      <h2>Wishlist delen</h2>
+      <p>Door je wishlist te delen wordt deze <strong style="color: var(--cream)">publiek zichtbaar</strong> voor iedereen met de link. Je wishlist kan niet bewerkt worden door anderen. Je kan dit altijd ongedaan maken.</p>
+      <div class="dialog-actions">
+        <button class="dialog-cancel" id="dialog-cancel">Annuleren</button>
+        <button class="dialog-confirm" id="dialog-confirm">Delen & link kopiëren</button>
+      </div>
+    </dialog>
+
+    <div class="sort-bar" id="sort-bar" hidden>
+      <button class="sort-btn active" data-sort="added">Toegevoegd</button>
+      <button class="sort-btn" data-sort="artist">Artiest</button>
+      <button class="sort-btn" data-sort="year">Jaar</button>
+    </div>
+
     <noscript>
       <p class="noscript-msg">JavaScript is vereist om je wishlist te tonen. Schakel JavaScript in om door te gaan.</p>
     </noscript>
     <div id="wishlist-container"></div>
   </main>
 
-  <script>
-    let wishlist: any[] = [];
+  <script is:inline define:vars={{ publicSlug }}>
+    let wishlist = [];
+    let currentSort = "added";
+    let isPublic = false;
+
+    function getSorted() {
+      const copy = [...wishlist];
+      if (currentSort === "artist") return copy.sort((a, b) => a.artist.localeCompare(b.artist));
+      if (currentSort === "year") return copy.sort((a, b) => (b.releaseYear ?? 0) - (a.releaseYear ?? 0));
+      return copy;
+    }
 
     async function loadWishlist() {
       try {
@@ -207,8 +392,48 @@ if (!accessToken) return Astro.redirect("/");
       renderWishlist();
     }
 
-    function removeFromWishlist(id: string) {
-      wishlist = wishlist.filter((a: any) => a.id !== id);
+    async function loadVisibility() {
+      try {
+        const res = await fetch("/api/wishlist-visibility");
+        if (res.ok) {
+          const data = await res.json();
+          isPublic = data.isPublic;
+          updateVisibilityUI();
+          document.getElementById("visibility-bar").hidden = false;
+        }
+      } catch {}
+    }
+
+    function updateVisibilityUI() {
+      const statusEl = document.getElementById("visibility-status");
+      const toggleBtn = document.getElementById("visibility-toggle");
+      const shareBtn = document.getElementById("share-btn");
+
+      if (isPublic) {
+        statusEl.textContent = "◉ Publiek";
+        toggleBtn.textContent = "Privé maken";
+        toggleBtn.classList.add("public");
+        shareBtn.hidden = false;
+      } else {
+        statusEl.textContent = "○ Privé";
+        toggleBtn.textContent = "Delen";
+        toggleBtn.classList.remove("public");
+        shareBtn.hidden = true;
+      }
+    }
+
+    async function setPublic(value) {
+      await fetch("/api/wishlist-visibility", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPublic: value }),
+      });
+      isPublic = value;
+      updateVisibilityUI();
+    }
+
+    function removeFromWishlist(id) {
+      wishlist = wishlist.filter((a) => a.id !== id);
       fetch(`/api/wishlist?id=${id}`, { method: "DELETE" }).catch(() => loadWishlist());
       renderWishlist();
     }
@@ -216,9 +441,9 @@ if (!accessToken) return Astro.redirect("/");
     function exportWishlist() {
       if (wishlist.length === 0) return;
 
-      const rows: string[][] = [["Artiest", "Album", "Jaar", "Discogs links"]];
-      wishlist.forEach((album: any) => {
-        const links = album.vinyl?.map((r: any) => `https://www.discogs.com${r.uri}`).join(" | ") ?? "";
+      const rows = [["Artiest", "Album", "Jaar", "Discogs links"]];
+      wishlist.forEach((album) => {
+        const links = album.vinyl?.map((r) => `https://www.discogs.com${r.uri}`).join(" | ") ?? "";
         rows.push([album.artist, album.name, String(album.releaseYear ?? ""), links]);
       });
 
@@ -232,13 +457,8 @@ if (!accessToken) return Astro.redirect("/");
       URL.revokeObjectURL(url);
     }
 
-    document.getElementById("export-btn")!.addEventListener("click", exportWishlist);
-
-    function shareWishlist() {
-      if (wishlist.length === 0) return;
-      const payload = JSON.stringify(wishlist);
-      const encoded = btoa(encodeURIComponent(payload).replace(/%([0-9A-F]{2})/gi, (_, p1) => String.fromCharCode(parseInt(p1, 16))));
-      const url = `${location.origin}/gedeeld?data=${encoded}`;
+    function copyShareLink() {
+      const url = `${location.origin}/wishlist/${publicSlug}`;
       navigator.clipboard.writeText(url).then(() => {
         showShareToast("Link gekopieerd!");
       }).catch(() => {
@@ -246,8 +466,8 @@ if (!accessToken) return Astro.redirect("/");
       });
     }
 
-    function showShareToast(msg: string) {
-      let toast = document.getElementById("share-toast") as HTMLElement;
+    function showShareToast(msg) {
+      let toast = document.getElementById("share-toast");
       if (!toast) {
         toast = document.createElement("div");
         toast.id = "share-toast";
@@ -261,16 +481,36 @@ if (!accessToken) return Astro.redirect("/");
       setTimeout(() => toast.classList.remove("show"), 2500);
     }
 
-    document.getElementById("share-btn")!.addEventListener("click", shareWishlist);
+    document.getElementById("export-btn").addEventListener("click", exportWishlist);
+    document.getElementById("share-btn").addEventListener("click", copyShareLink);
+
+    document.getElementById("visibility-toggle").addEventListener("click", () => {
+      if (!isPublic) {
+        document.getElementById("share-dialog").showModal();
+      } else {
+        setPublic(false);
+      }
+    });
+
+    document.getElementById("dialog-cancel").addEventListener("click", () => {
+      document.getElementById("share-dialog").close();
+    });
+
+    document.getElementById("dialog-confirm").addEventListener("click", async () => {
+      document.getElementById("share-dialog").close();
+      await setPublic(true);
+      copyShareLink();
+    });
 
     function renderWishlist() {
-      const container = document.getElementById("wishlist-container")!;
-      const subtitle = document.getElementById("wishlist-subtitle")!;
-      const exportBtn = document.getElementById("export-btn") as HTMLButtonElement;
+      const container = document.getElementById("wishlist-container");
+      const subtitle = document.getElementById("wishlist-subtitle");
+      const exportBtn = document.getElementById("export-btn");
 
+      const sorted = getSorted();
       subtitle.textContent = `${wishlist.length} album${wishlist.length !== 1 ? "s" : ""} opgeslagen`;
       exportBtn.hidden = wishlist.length === 0;
-      (document.getElementById("share-btn") as HTMLButtonElement).hidden = wishlist.length === 0;
+      document.getElementById("sort-bar").hidden = wishlist.length === 0;
 
       if (wishlist.length === 0) {
         container.innerHTML = `
@@ -285,7 +525,7 @@ if (!accessToken) return Astro.redirect("/");
 
       let html = '<ul class="albums-grid">';
 
-      wishlist.forEach((album: any, i: number) => {
+      sorted.forEach((album, i) => {
         html += `
           <li><article class="album-card" style="animation-delay: ${i * 0.05}s">
             <div class="album-cover">
@@ -303,7 +543,7 @@ if (!accessToken) return Astro.redirect("/");
                 album.vinyl && album.vinyl.length > 0
                   ? `<ul class="vinyl-list">${album.vinyl
                       .map(
-                        (r: any) =>
+                        (r) =>
                           `<li><a href="https://www.discogs.com${r.uri}" target="_blank" rel="noopener">${r.title} (${r.year ?? "onbekend"})</a></li>`,
                       )
                       .join("")}</ul>`
@@ -320,11 +560,20 @@ if (!accessToken) return Astro.redirect("/");
 
       container.querySelectorAll(".remove-btn").forEach((btn) => {
         btn.addEventListener("click", () => {
-          removeFromWishlist((btn as HTMLElement).dataset.id!);
+          removeFromWishlist(btn.dataset.id);
         });
       });
     }
 
+    document.getElementById("sort-bar").addEventListener("click", (e) => {
+      const btn = e.target.closest(".sort-btn");
+      if (!btn) return;
+      currentSort = btn.dataset.sort;
+      document.querySelectorAll(".sort-btn").forEach((b) => b.classList.toggle("active", b === btn));
+      renderWishlist();
+    });
+
     loadWishlist();
+    loadVisibility();
   </script>
 </Layout>

@@ -5,7 +5,7 @@ import { join } from "path";
 const dataDir = join(process.cwd(), "data");
 mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(join(dataDir, "wishlist.db"));
+export const db = new Database(join(dataDir, "wishlist.db"));
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS wishlist (
@@ -18,7 +18,19 @@ db.exec(`
     vinyl       TEXT,
     created_at  INTEGER DEFAULT (unixepoch()),
     PRIMARY KEY (user_id, album_id)
-  )
+  );
+
+  CREATE TABLE IF NOT EXISTS cache (
+    key        TEXT PRIMARY KEY,
+    data       TEXT NOT NULL,
+    timestamp  INTEGER NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS user_settings (
+    user_id   TEXT PRIMARY KEY,
+    slug      TEXT UNIQUE NOT NULL,
+    is_public INTEGER DEFAULT 0
+  );
 `);
 
 export function getWishlistItems(userId) {
@@ -52,4 +64,24 @@ export function addWishlistItem(userId, album) {
 
 export function removeWishlistItem(userId, albumId) {
   db.prepare("DELETE FROM wishlist WHERE user_id = ? AND album_id = ?").run(userId, albumId);
+}
+
+export function ensureUserSettings(userId, slug) {
+  db.prepare(
+    "INSERT OR IGNORE INTO user_settings (user_id, slug, is_public) VALUES (?, ?, 0)"
+  ).run(userId, slug);
+}
+
+export function getUserPublic(userId) {
+  return !!(db.prepare("SELECT is_public FROM user_settings WHERE user_id = ?").get(userId)?.is_public);
+}
+
+export function setUserPublic(userId, isPublic) {
+  db.prepare("UPDATE user_settings SET is_public = ? WHERE user_id = ?").run(isPublic ? 1 : 0, userId);
+}
+
+export function getWishlistBySlug(slug) {
+  const row = db.prepare("SELECT user_id, is_public FROM user_settings WHERE slug = ?").get(slug);
+  if (!row || !row.is_public) return null;
+  return getWishlistItems(row.user_id);
 }
