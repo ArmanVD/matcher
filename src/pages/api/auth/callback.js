@@ -72,6 +72,15 @@ export async function GET({ request, cookies, redirect }) {
           secure: import.meta.env.PROD,
         });
       }
+      if (profile.id) {
+        cookies.set("spotify_user_id", profile.id, {
+          path: "/",
+          maxAge: 60 * 60 * 24 * 30,
+          httpOnly: true,
+          sameSite: "lax",
+          secure: import.meta.env.PROD,
+        });
+      }
     }
   } catch {}
 

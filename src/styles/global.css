@@ -3,7 +3,7 @@
   src: url("/fonts/SpaceMono400.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -11,7 +11,7 @@
   src: url("/fonts/SpaceMono700.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -20,7 +20,7 @@
        url("/fonts/advercase-bold.woff") format("woff");
   font-weight: 700;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 @font-face {
@@ -29,7 +29,7 @@
        url("/fonts/advercase-regular.woff") format("woff");
   font-weight: 400;
   font-style: normal;
-  font-display: swap;
+  font-display: optional;
 }
 
 *,
@@ -87,8 +87,17 @@
   --black: #0a0804;
 }
 
-body {
+html {
   background-color: var(--black);
+  background-image:
+    radial-gradient(ellipse at 10% 20%, rgba(91, 45, 142, 0.4) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(232, 84, 26, 0.35) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 50%, rgba(212, 160, 23, 0.2) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 10%, rgba(232, 67, 147, 0.3) 0%, transparent 40%);
+  background-attachment: fixed;
+}
+
+body {
   color: var(--cream);
   font-family: "Space Mono", monospace;
   min-height: 100vh;
@@ -99,14 +108,10 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  background:
-    radial-gradient(ellipse at 10% 20%, rgba(91, 45, 142, 0.4) 0%, transparent 50%),
-    radial-gradient(ellipse at 90% 80%, rgba(232, 84, 26, 0.35) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(212, 160, 23, 0.2) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 10%, rgba(232, 67, 147, 0.3) 0%, transparent 40%);
   pointer-events: none;
   z-index: 0;
   animation: bgPulse 8s ease-in-out infinite alternate;
+  background: transparent;
 }
 
 @keyframes bgPulse {
@@ -238,12 +243,18 @@ body::after {
 
 .logo {
   font-family: "Advercase", sans-serif;
-  font-size: clamp(36px, 8vw, 96px);
+  font-size: clamp(24px, 7vw, 96px);
   color: var(--cream);
-  letter-spacing: 4px;
+  letter-spacing: 2px;
   line-height: 0.9;
   text-decoration: none;
   position: relative;
+}
+
+@media (min-width: 768px) {
+  .logo {
+    letter-spacing: 4px;
+  }
 }
 
 .logo span {
@@ -434,17 +445,18 @@ body::after {
   color: rgba(245, 239, 214, 0.6);
   text-decoration: none;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 1px;
   border: 1px solid rgba(245, 239, 214, 0.15);
-  padding: 5px 10px;
+  padding: 5px 8px;
   border-radius: 2px;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 @media (min-width: 768px) {
   .logout,
   .back-btn {
-    font-size: 16px;
+    letter-spacing: 2px;
     padding: 6px 12px;
   }
 }
@@ -512,7 +524,7 @@ body::after {
 .footer-credit {
   font-family: "Space Mono", monospace;
   font-size: 16px;
-  color: rgba(245, 239, 214, 0.4);
+  color: rgba(245, 239, 214, 0.6);
   text-decoration: none;
   letter-spacing: 1px;
   transition: color 0.2s;
@@ -531,7 +543,7 @@ body::after {
 .footer-links a {
   font-family: "Space Mono", monospace;
   font-size: 16px;
-  color: rgba(245, 239, 214, 0.4);
+  color: rgba(245, 239, 214, 0.6);
   text-decoration: none;
   letter-spacing: 1px;
   text-transform: uppercase;

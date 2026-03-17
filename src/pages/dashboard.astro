@@ -35,7 +35,8 @@ const user = await getUser(accessToken);
     .user-info {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      flex-shrink: 0;
     }
 
     @media (min-width: 768px) {
@@ -111,6 +112,9 @@ const user = await getUser(accessToken);
       border-radius: 2px;
       transition: all 0.2s;
       flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
     }
 
@@ -353,11 +357,19 @@ const user = await getUser(accessToken);
       color: rgba(245, 239, 214, 0.6);
       text-decoration: none;
       text-transform: uppercase;
-      letter-spacing: 2px;
+      letter-spacing: 1px;
       border: 1px solid rgba(245, 239, 214, 0.15);
-      padding: 5px 10px;
+      padding: 5px 8px;
       border-radius: 2px;
       transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    @media (min-width: 768px) {
+      .wishlist-link {
+        letter-spacing: 2px;
+        padding: 5px 10px;
+      }
     }
 
     .wishlist-link:hover {
@@ -489,7 +501,14 @@ const user = await getUser(accessToken);
       }
     }
 
-    .filter-btn:hover,
+    @media (hover: hover) {
+      .filter-btn:hover {
+        color: var(--black);
+        background: var(--orange);
+        border-color: var(--orange);
+      }
+    }
+
     .filter-btn[aria-pressed="true"] {
       color: var(--black);
       background: var(--orange);
@@ -572,14 +591,13 @@ const user = await getUser(accessToken);
     </div>
 
     <script>
-      import { getWishlist, saveWishlist } from "../lib/wishlist.js";
-
       const timeRange = (document.getElementById("results") as HTMLElement).dataset.period!;
       let offset = 0;
       let loading = false;
       let initialLoad = true;
       let firstRender = true;
       let toastTimer: ReturnType<typeof setTimeout>;
+      let wishlist: any[] = [];
 
       function showToast(msg: string) {
         let toast = document.getElementById("toast") as HTMLElement;
@@ -723,6 +741,7 @@ data-album='${JSON.stringify({ id: album.id, name: album.name, artist: artist.na
     </div>
   `;
           document.getElementById("results")!.appendChild(skeletonEl);
+          skeletonEl.scrollIntoView({ behavior: "smooth", block: "start" });
         }
 
         try {
@@ -805,14 +824,21 @@ data-album='${JSON.stringify({ id: album.id, name: album.name, artist: artist.na
         loading = false;
       }
 
+      async function loadWishlist() {
+        try {
+          const res = await fetch("/api/wishlist");
+          if (res.ok) wishlist = await res.json();
+        } catch {}
+        updateWishlistCount();
+        updateWishlistButtons();
+      }
+
       function updateWishlistCount() {
-        const count = getWishlist().length;
         const el = document.getElementById("wishlist-count");
-        if (el) el.textContent = String(count);
+        if (el) el.textContent = String(wishlist.length);
       }
 
       function updateWishlistButtons() {
-        const wishlist = getWishlist();
         const ids = wishlist.map((a: any) => a.id);
         document.querySelectorAll(".wishlist-btn").forEach((btn) => {
           const album = JSON.parse((btn as HTMLElement).dataset.album!);
@@ -833,17 +859,29 @@ data-album='${JSON.stringify({ id: album.id, name: album.name, artist: artist.na
         if (!btn) return;
 
         const album = JSON.parse((btn as HTMLElement).dataset.album!);
-        let wishlist = getWishlist();
         const exists = wishlist.findIndex((a: any) => a.id === album.id);
         const adding = exists < 0;
 
-        if (exists >= 0) {
-          wishlist.splice(exists, 1);
-        } else {
+        if (adding) {
           wishlist.push(album);
+          fetch("/api/wishlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(album),
+          }).catch(() => {
+            wishlist = wishlist.filter((a: any) => a.id !== album.id);
+            updateWishlistCount();
+            updateWishlistButtons();
+          });
+        } else {
+          wishlist.splice(exists, 1);
+          fetch(`/api/wishlist?id=${album.id}`, { method: "DELETE" }).catch(() => {
+            wishlist.push(album);
+            updateWishlistCount();
+            updateWishlistButtons();
+          });
         }
 
-        saveWishlist(wishlist);
         updateWishlistCount();
         updateWishlistButtons();
         showToast(adding ? "Toegevoegd aan wishlist ♥" : "Verwijderd uit wishlist");
@@ -851,7 +889,7 @@ data-album='${JSON.stringify({ id: album.id, name: album.name, artist: artist.na
 
       document.getElementById("load-more")!.addEventListener("click", loadResults);
 
-      updateWishlistCount();
+      loadWishlist();
       loadResults();
 
       document.getElementById("vinyl-filter")!.addEventListener("click", function () {

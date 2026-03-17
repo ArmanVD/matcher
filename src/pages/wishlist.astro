@@ -128,6 +128,21 @@ if (!accessToken) return Astro.redirect("/");
       border-color: var(--mustard);
     }
 
+    .wishlist-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex-shrink: 0;
+      align-items: stretch;
+    }
+
+    @media (min-width: 640px) {
+      .wishlist-actions {
+        flex-direction: row;
+        align-items: flex-start;
+      }
+    }
+
     .share-toast {
       position: fixed;
       bottom: 24px;
@@ -166,7 +181,7 @@ if (!accessToken) return Astro.redirect("/");
         <h1 class="page-title"><span aria-hidden="true">♡ </span>Wishlist</h1>
         <p class="page-subtitle" id="wishlist-subtitle">Laden...</p>
       </div>
-      <div style="display:flex;gap:8px;flex-shrink:0;align-items:flex-start">
+      <div class="wishlist-actions">
         <button class="export-btn" id="share-btn" hidden>
           <span aria-hidden="true">↗ </span>Delen
         </button>
@@ -182,15 +197,23 @@ if (!accessToken) return Astro.redirect("/");
   </main>
 
   <script>
-    import { getWishlist, saveWishlist } from "../lib/wishlist.js";
+    let wishlist: any[] = [];
+
+    async function loadWishlist() {
+      try {
+        const res = await fetch("/api/wishlist");
+        if (res.ok) wishlist = await res.json();
+      } catch {}
+      renderWishlist();
+    }
 
     function removeFromWishlist(id: string) {
-      saveWishlist(getWishlist().filter((a: any) => a.id !== id));
+      wishlist = wishlist.filter((a: any) => a.id !== id);
+      fetch(`/api/wishlist?id=${id}`, { method: "DELETE" }).catch(() => loadWishlist());
       renderWishlist();
     }
 
     function exportWishlist() {
-      const wishlist = getWishlist();
       if (wishlist.length === 0) return;
 
       const rows: string[][] = [["Artiest", "Album", "Jaar", "Discogs links"]];
@@ -212,7 +235,6 @@ if (!accessToken) return Astro.redirect("/");
     document.getElementById("export-btn")!.addEventListener("click", exportWishlist);
 
     function shareWishlist() {
-      const wishlist = getWishlist();
       if (wishlist.length === 0) return;
       const payload = JSON.stringify(wishlist);
       const encoded = btoa(encodeURIComponent(payload).replace(/%([0-9A-F]{2})/gi, (_, p1) => String.fromCharCode(parseInt(p1, 16))));
@@ -242,7 +264,6 @@ if (!accessToken) return Astro.redirect("/");
     document.getElementById("share-btn")!.addEventListener("click", shareWishlist);
 
     function renderWishlist() {
-      const wishlist = getWishlist();
       const container = document.getElementById("wishlist-container")!;
       const subtitle = document.getElementById("wishlist-subtitle")!;
       const exportBtn = document.getElementById("export-btn") as HTMLButtonElement;
@@ -304,6 +325,6 @@ if (!accessToken) return Astro.redirect("/");
       });
     }
 
-    renderWishlist();
+    loadWishlist();
   </script>
 </Layout>

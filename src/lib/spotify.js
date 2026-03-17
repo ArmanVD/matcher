@@ -1,4 +1,29 @@
+import { readFileSync, writeFileSync } from "fs";
+
+const RATE_LIMIT_FILE = "/tmp/spotify_rate_limit.json";
+
+function getRateLimitedUntil() {
+  try {
+    const data = JSON.parse(readFileSync(RATE_LIMIT_FILE, "utf8"));
+    return data.until ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
+function setRateLimitedUntil(until) {
+  try {
+    writeFileSync(RATE_LIMIT_FILE, JSON.stringify({ until }));
+  } catch {}
+}
+
 export async function getTopTracks(accessToken, timeRange = "medium_term") {
+  const rateLimitedUntil = getRateLimitedUntil();
+  if (Date.now() < rateLimitedUntil) {
+    console.warn(`[Spotify] Rate limited, skipping until ${new Date(rateLimitedUntil).toISOString()}`);
+    return [];
+  }
+
   const offsets = [0, 49, 98, 149];
 
   const fetches = await Promise.all(
@@ -9,7 +34,19 @@ export async function getTopTracks(accessToken, timeRange = "medium_term") {
     ),
   );
 
-  const results = await Promise.all(fetches.map((r) => r.json()));
+  const results = await Promise.all(fetches.map(async (r) => {
+    if (r.status === 429) {
+      const retryAfter = parseInt(r.headers.get("Retry-After") ?? "60");
+      setRateLimitedUntil(Date.now() + retryAfter * 1000);
+      console.error(`[Spotify getTopTracks] 429 — rate limited for ${retryAfter}s`);
+      return { items: [] };
+    }
+    if (!r.ok) {
+      console.error(`[Spotify getTopTracks] status: ${r.status}`);
+      return { items: [] };
+    }
+    return r.json();
+  }));
 
   const combined = results.flatMap((data) => data.items ?? []);
 
@@ -81,6 +118,14 @@ export async function getUser(accessToken) {
       Authorization: `Bearer ${accessToken}`,
     },
   });
+
+  if (!response.ok) {
+    if (response.status === 429) {
+      const retryAfter = parseInt(response.headers.get("Retry-After") ?? "60");
+      setRateLimitedUntil(Date.now() + retryAfter * 1000);
+    }
+    return { name: null, image: null };
+  }
 
   const data = await response.json();
   return {

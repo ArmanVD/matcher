@@ -21,6 +21,8 @@ const fullTitle = title === "Matcher" ? title : `${title} — Matcher`;
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>{fullTitle}</title>
@@ -45,10 +47,12 @@ const fullTitle = title === "Matcher" ? title : `${title} — Matcher`;
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={new URL("/og-image.png", Astro.site ?? Astro.url.origin).toString()} />
 
+    <link rel="preload" href="/fonts/advercase-bold.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/advercase-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/SpaceMono400.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preconnect" href="https://i.scdn.co" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="theme-color" content="#e8541a" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <slot name="head" />
   </head>
   <body>
