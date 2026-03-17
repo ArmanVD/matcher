@@ -1,17 +1,328 @@
 ---
+import Layout from "../layouts/Layout.astro";
 
+const accessToken = Astro.cookies.get("spotify_access_token")?.value;
+if (accessToken) return Astro.redirect("/dashboard");
+
+const userName = Astro.cookies.get("spotify_user_name")?.value ?? null;
+
+const error = Astro.url.searchParams.get("error");
+const errorMessages: Record<string, string> = {
+  access_denied: "Je hebt de toegang geweigerd. Probeer opnieuw.",
+  invalid_state: "Beveiligingsfout. Probeer opnieuw in te loggen.",
+  token_failed: "Inloggen mislukt. Probeer het opnieuw.",
+};
+const errorMessage = error ? (errorMessages[error] ?? "Er ging iets mis.") : null;
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout title="Matcher">
+  <style is:global>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    #main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+
+  <style>
+    /* Vinyl record — verborgen op mobiel */
+    .vinyl-record {
+      display: none;
+    }
+
+    @media (min-width: 1024px) {
+      .vinyl-record {
+        display: block;
+        position: fixed;
+        width: 480px;
+        height: 480px;
+        border-radius: 50%;
+        right: -100px;
+        top: 50%;
+        transform: translateY(-50%);
+        animation: spin 20s linear infinite;
+        opacity: 0.07;
+        background: repeating-radial-gradient(circle, #333 0px, #333 2px, #111 2px, #111 8px);
+      }
+
+      .vinyl-record::after {
+        content: "";
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        background: var(--black);
+        border-radius: 50%;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        border: 2px solid #333;
+      }
+    }
+
+    @keyframes spin {
+      from {
+        transform: translateY(-50%) rotate(0deg);
+      }
+      to {
+        transform: translateY(-50%) rotate(360deg);
+      }
+    }
+
+    .container {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 32px 20px;
+      width: 100%;
+      max-width: 600px;
+    }
+
+    @media (min-width: 768px) {
+      .container {
+        padding: 40px 24px;
+      }
+    }
+
+    .eyebrow {
+      font-size: 16px;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--orange);
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.2s both;
+    }
+
+    @media (min-width: 768px) {
+      .eyebrow {
+        font-size: 16px;
+        letter-spacing: 4px;
+        margin-bottom: 24px;
+      }
+    }
+
+    .logo {
+      font-family: "Advercase", sans-serif;
+      font-size: clamp(56px, 16vw, 160px);
+      letter-spacing: 6px;
+      line-height: 0.9;
+      color: var(--cream);
+      margin-bottom: 8px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.4s both;
+    }
+
+    @media (min-width: 768px) {
+      .logo {
+        letter-spacing: 8px;
+      }
+    }
+
+    .logo span {
+      color: var(--orange);
+    }
+
+    .tagline {
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.6);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+      line-height: 1.8;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.6s both;
+    }
+
+    @media (min-width: 768px) {
+      .tagline {
+        font-size: 16px;
+        margin-bottom: 56px;
+      }
+    }
+
+    .login-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-family: "Advercase", sans-serif;
+      font-size: 18px;
+      letter-spacing: 3px;
+      color: var(--black);
+      background: var(--mustard);
+      text-decoration: none;
+      padding: 16px 32px;
+      border-radius: 2px;
+      transition: all 0.25s;
+      position: relative;
+      overflow: hidden;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 0.8s both;
+      width: 100%;
+      justify-content: center;
+    }
+
+    @media (min-width: 480px) {
+      .login-btn {
+        width: auto;
+        padding: 18px 48px;
+        font-size: 22px;
+      }
+    }
+
+    .login-btn::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--orange);
+      transform: translateX(-100%);
+      transition: transform 0.3s;
+    }
+
+    .login-btn:hover::before {
+      transform: translateX(0);
+    }
+
+    .login-btn span {
+      position: relative;
+      z-index: 1;
+    }
+
+    .spotify-icon {
+      position: relative;
+      z-index: 1;
+      width: 20px;
+      height: 20px;
+      flex-shrink: 0;
+    }
+
+    .switch-btn {
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      letter-spacing: 1px;
+      color: rgba(245, 239, 214, 0.6);
+      text-decoration: none;
+      text-transform: uppercase;
+      border-bottom: 1px solid rgba(245, 239, 214, 0.3);
+      padding-bottom: 2px;
+      margin-top: 20px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 1s both;
+      transition: color 0.2s, border-color 0.2s;
+    }
+
+    .switch-btn:hover {
+      color: rgba(245, 239, 214, 0.7);
+      border-color: rgba(245, 239, 214, 0.4);
+    }
+
+    .error-msg {
+      margin-top: 16px;
+      font-size: 16px;
+      color: var(--orange);
+      letter-spacing: 1px;
+    }
+
+    .disclaimer {
+      margin-top: 20px;
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.2);
+      letter-spacing: 1px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 1s both;
+    }
+
+    .features {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      margin-top: 48px;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 0.6s ease 1.1s both;
+      list-style: none;
+    }
+
+    @media (min-width: 768px) {
+      .features {
+        gap: 32px;
+        margin-top: 64px;
+      }
+    }
+
+    .feature {
+      text-align: center;
+    }
+
+    .feature-icon {
+      font-size: 20px;
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    @media (min-width: 768px) {
+      .feature-icon {
+        font-size: 24px;
+      }
+    }
+
+    .feature-label {
+      font-size: 16px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: rgba(245, 239, 214, 0.6);
+    }
+  </style>
+
+  <div class="vinyl-record" aria-hidden="true"></div>
+
+  <main class="container" id="main-content">
+    <p class="eyebrow">Jouw muziek · Jouw vinyl</p>
+
+    <h1 class="logo">MATCH<span>ER</span></h1>
+
+    <p class="tagline">Koppel je Spotify account en ontdek welke albums jij op vinyl kan hebben.</p>
+
+    <a href="/api/auth/login" class="login-btn">
+      <svg class="spotify-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path
+          d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"
+        ></path>
+      </svg>
+      <span>{userName ? `Log weer in als ${userName}` : "Inloggen met Spotify"}</span>
+    </a>
+
+    {userName && (
+      <a href="/api/auth/login?switch=true" class="switch-btn">Inloggen met een ander account</a>
+    )}
+
+    {errorMessage && <p class="error-msg" role="alert">{errorMessage}</p>}
+
+    <ul class="features">
+      <li class="feature">
+        <span class="feature-icon">◎</span>
+        <span class="feature-label">Top artiesten</span>
+      </li>
+      <li class="feature">
+        <span class="feature-icon">◈</span>
+        <span class="feature-label">Vinyl matches</span>
+      </li>
+      <li class="feature">
+        <span class="feature-icon">◉</span>
+        <span class="feature-label">Discogs links</span>
+      </li>
+    </ul>
+  </main>
+</Layout>

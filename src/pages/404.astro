@@ -1,0 +1,101 @@
+---
+import Layout from "../layouts/Layout.astro";
+---
+
+<Layout title="Pagina niet gevonden" description="Deze pagina bestaat niet op Matcher.">
+  <style is:global>
+    .not-found {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      min-height: 60vh;
+      padding: 64px 16px;
+    }
+
+    .not-found-code {
+      font-family: "Advercase", sans-serif;
+      font-size: clamp(80px, 20vw, 180px);
+      letter-spacing: 8px;
+      color: var(--orange);
+      line-height: 1;
+      margin-bottom: 16px;
+      opacity: 0.25;
+    }
+
+    .not-found h1 {
+      font-family: "Advercase", sans-serif;
+      font-size: clamp(24px, 5vw, 48px);
+      letter-spacing: 3px;
+      color: var(--cream);
+      margin-bottom: 16px;
+    }
+
+    .not-found p {
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.6);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+
+    .not-found-links {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .not-found-links a {
+      font-family: "Advercase", sans-serif;
+      font-size: 20px;
+      letter-spacing: 3px;
+      color: var(--black);
+      background: var(--mustard);
+      text-decoration: none;
+      padding: 12px 32px;
+      border-radius: 2px;
+      transition: background 0.2s;
+    }
+
+    .not-found-links a:hover {
+      background: var(--orange);
+    }
+
+    .not-found-links a.secondary {
+      background: none;
+      color: rgba(245, 239, 214, 0.6);
+      border: 1px solid rgba(245, 239, 214, 0.15);
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      letter-spacing: 2px;
+    }
+
+    .not-found-links a.secondary:hover {
+      color: var(--cream);
+      border-color: rgba(245, 239, 214, 0.4);
+      background: none;
+    }
+  </style>
+
+  <header class="site-header">
+    <div class="wrapper">
+      <div class="header-inner">
+        <a href="/" class="logo">MATCH<span>ER</span></a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrapper" id="main-content">
+    <div class="not-found">
+      <p class="not-found-code" aria-hidden="true">404</p>
+      <h1>Pagina niet gevonden</h1>
+      <p>Deze pagina bestaat niet of is verplaatst</p>
+      <nav class="not-found-links" aria-label="Terug navigatie">
+        <a href="/">Ga naar home</a>
+        <a href="/dashboard" class="secondary">← Dashboard</a>
+      </nav>
+    </div>
+  </main>
+</Layout>

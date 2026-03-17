@@ -1,0 +1,864 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getUser } from "../lib/spotify.js";
+import { getValidToken } from "../lib/spotifyAuth.js";
+
+const accessToken = await getValidToken(Astro.cookies);
+if (!accessToken) return Astro.redirect("/");
+
+const timeRange = Astro.url.searchParams.get("period") ?? "medium_term";
+const user = await getUser(accessToken);
+---
+
+<Layout title="Jouw vinyl matches" description="Bekijk welke albums uit jouw Spotify luistergeschiedenis beschikbaar zijn op vinyl via Discogs.">
+  <style is:global>
+    .logo::after {
+      content: "●";
+      font-size: 16px;
+      color: var(--orange);
+      position: absolute;
+      top: 8px;
+      right: -16px;
+      animation: blink 1.5s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%,
+      100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    @media (min-width: 768px) {
+      .user-info {
+        gap: 12px;
+      }
+    }
+
+    .user-info img {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--orange);
+      object-fit: cover;
+    }
+
+    @media (min-width: 768px) {
+      .user-info img {
+        width: 40px;
+        height: 40px;
+      }
+    }
+
+    .user-info .user-text {
+      display: none;
+    }
+
+    @media (min-width: 640px) {
+      .user-info .user-text {
+        display: block;
+      }
+      .user-info span {
+        font-size: 16px;
+        color: rgba(245, 239, 214, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+      }
+      .user-info strong {
+        display: block;
+        font-size: 16px;
+        color: var(--cream);
+      }
+    }
+
+    .logout:hover {
+      color: var(--orange);
+      border-color: var(--orange);
+    }
+
+    .period-nav {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    @media (min-width: 768px) {
+      .period-nav {
+        margin-bottom: 48px;
+        flex-wrap: nowrap;
+      }
+    }
+
+    .period-nav a {
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(245, 239, 214, 0.6);
+      text-decoration: none;
+      padding: 8px 12px;
+      border: 1px solid rgba(245, 239, 214, 0.15);
+      border-radius: 2px;
+      transition: all 0.2s;
+      flex: 1;
+      text-align: center;
+    }
+
+    @media (min-width: 768px) {
+      .period-nav a {
+        font-size: 16px;
+        letter-spacing: 2px;
+        padding: 10px 20px;
+        flex: none;
+      }
+    }
+
+    .period-nav a:hover,
+    .period-nav a.active {
+      color: var(--black);
+      background: var(--mustard);
+      border-color: var(--mustard);
+    }
+
+    .artist-block {
+      margin-bottom: 48px;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    @media (min-width: 768px) {
+      .artist-block {
+        margin-bottom: 80px;
+      }
+    }
+
+    .artist-header {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--orange);
+      position: relative;
+    }
+
+    @media (min-width: 768px) {
+      .artist-header {
+        gap: 16px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+      }
+    }
+
+    .artist-header::before {
+      content: "";
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      width: 60px;
+      height: 2px;
+      background: var(--mustard);
+    }
+
+    .artist-name {
+      font-family: "Advercase", sans-serif;
+      font-size: clamp(28px, 5vw, 56px);
+      letter-spacing: 2px;
+      color: var(--cream);
+      line-height: 1;
+    }
+
+    .artist-count {
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      color: var(--orange);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    @media (min-width: 768px) {
+      .artist-count {
+        font-size: 16px;
+      }
+    }
+
+    .album-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(245, 239, 214, 0.2);
+    }
+
+    .album-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(91, 45, 142, 0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+
+    .album-cover img {
+      transition: transform 0.5s;
+    }
+    .album-card:hover .album-cover img {
+      transform: scale(1.04);
+    }
+
+    .album-cover::after {
+      content: "◉ VINYL";
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      letter-spacing: 1px;
+      background: var(--orange);
+      color: var(--black);
+      padding: 3px 6px;
+      border-radius: 2px;
+      font-weight: 700;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    @media (min-width: 768px) {
+      .album-cover::after {
+        top: 12px;
+        right: 12px;
+        font-size: 16px;
+        letter-spacing: 2px;
+        padding: 4px 8px;
+      }
+    }
+
+    .album-card:has(.vinyl-list li) .album-cover::after {
+      opacity: 1;
+    }
+
+    .album-year {
+      margin-bottom: 10px;
+    }
+
+    @media (min-width: 768px) {
+      .album-year {
+        margin-bottom: 14px;
+      }
+    }
+
+    .load-more-wrap {
+      text-align: center;
+      padding: 32px 0 60px;
+    }
+
+    @media (min-width: 768px) {
+      .load-more-wrap {
+        padding: 48px 0 80px;
+      }
+    }
+
+    #load-more {
+      font-family: "Advercase", sans-serif;
+      font-size: 20px;
+      letter-spacing: 3px;
+      color: var(--black);
+      background: var(--mustard);
+      border: none;
+      padding: 14px 32px;
+      cursor: pointer;
+      border-radius: 2px;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+      width: 100%;
+    }
+
+    @media (min-width: 480px) {
+      #load-more {
+        font-size: 24px;
+        letter-spacing: 4px;
+        padding: 16px 48px;
+        width: auto;
+      }
+    }
+
+    #load-more::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: var(--orange);
+      transform: translateX(-100%);
+      transition: transform 0.3s;
+    }
+
+    #load-more:hover::before {
+      transform: translateX(0);
+    }
+    #load-more span {
+      position: relative;
+      z-index: 1;
+    }
+    #load-more:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .albums-grid .album-card:nth-child(1) {
+      animation-delay: 0.05s;
+    }
+    .albums-grid .album-card:nth-child(2) {
+      animation-delay: 0.1s;
+    }
+    .albums-grid .album-card:nth-child(3) {
+      animation-delay: 0.15s;
+    }
+
+    .album-card.loaded {
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .wishlist-btn {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(10, 8, 4, 0.95);
+      border: 1px solid rgba(245, 239, 214, 0.25);
+      color: var(--cream);
+      font-size: 16px;
+      width: 32px;
+      height: 32px;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+    }
+
+    .wishlist-btn:hover,
+    .wishlist-btn.saved {
+      color: var(--pink);
+    }
+
+    .wishlist-link {
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.6);
+      text-decoration: none;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      border: 1px solid rgba(245, 239, 214, 0.15);
+      padding: 5px 10px;
+      border-radius: 2px;
+      transition: all 0.2s;
+    }
+
+    .wishlist-link:hover {
+      color: var(--pink);
+      border-color: var(--pink);
+    }
+
+    .skeleton {
+      background: linear-gradient(90deg, rgba(245, 239, 214, 0.04) 25%, rgba(245, 239, 214, 0.08) 50%, rgba(245, 239, 214, 0.04) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 2px;
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    .skeleton-title {
+      height: 48px;
+      width: 240px;
+      margin-bottom: 4px;
+    }
+
+    .skeleton-cover {
+      aspect-ratio: 1;
+      width: 100%;
+    }
+
+    .skeleton-text {
+      height: 20px;
+      width: 80%;
+      margin-bottom: 8px;
+      margin-top: 12px;
+    }
+
+    .skeleton-text-sm {
+      height: 14px;
+      width: 40%;
+    }
+
+    .error-state {
+      text-align: center;
+      padding: 64px 0;
+    }
+
+    .error-state p {
+      font-size: 16px;
+      color: rgba(245, 239, 214, 0.5);
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+
+    .retry-btn {
+      font-family: "Advercase", sans-serif;
+      font-size: 20px;
+      letter-spacing: 3px;
+      color: var(--black);
+      background: var(--mustard);
+      border: none;
+      padding: 12px 32px;
+      border-radius: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.2s;
+    }
+
+    .retry-btn:hover {
+      background: var(--orange);
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--mustard);
+      color: var(--black);
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      letter-spacing: 1px;
+      padding: 12px 24px;
+      border-radius: 2px;
+      z-index: 100;
+      transition: transform 0.3s ease;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .filter-bar {
+      margin-bottom: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .filter-bar {
+        margin-bottom: 40px;
+      }
+    }
+
+    .filter-btn {
+      font-family: "Space Mono", monospace;
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: rgba(245, 239, 214, 0.6);
+      background: none;
+      border: 1px solid rgba(245, 239, 214, 0.15);
+      border-radius: 2px;
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    @media (min-width: 768px) {
+      .filter-btn {
+        letter-spacing: 2px;
+        padding: 10px 20px;
+      }
+    }
+
+    .filter-btn:hover,
+    .filter-btn[aria-pressed="true"] {
+      color: var(--black);
+      background: var(--orange);
+      border-color: var(--orange);
+    }
+
+    @supports selector(:has(*)) {
+      #results.vinyl-only li:has(.no-vinyl) {
+        display: none;
+      }
+      #results.vinyl-only .artist-block:not(:has(.vinyl-list)) {
+        display: none;
+      }
+    }
+
+    .content-wrapper .page-subtitle {
+      margin-bottom: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .content-wrapper .page-subtitle {
+        margin-bottom: 20px;
+      }
+    }
+  </style>
+
+  <header class="site-header">
+    <div class="wrapper">
+      <div class="header-inner">
+        <p class="logo">MATCH<span>ER</span></p>
+        <div class="user-info">
+          {user.image && <img src={user.image} alt={user.name} />}
+          <p class="user-text">
+            <span>Ingelogd als</span>
+            <strong>{user.name}</strong>
+          </p>
+          <a href="/api/auth/logout" class="logout">Uitloggen</a>
+          <a href="/wishlist" class="wishlist-link">
+            <span aria-hidden="true">♡</span>
+            <span id="wishlist-count">0</span><span class="sr-only"> items in wishlist</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrapper content-wrapper" id="main-content">
+    <nav class="period-nav">
+      <a href="?period=short_term" class={timeRange === "short_term" ? "active" : ""} aria-current={timeRange === "short_term" ? "true" : undefined}
+        >Afgelopen maand</a
+      >
+      <a
+        href="?period=medium_term"
+        class={timeRange === "medium_term" ? "active" : ""}
+        aria-current={timeRange === "medium_term" ? "true" : undefined}>6 maanden</a
+      >
+      <a href="?period=long_term" class={timeRange === "long_term" ? "active" : ""} aria-current={timeRange === "long_term" ? "true" : undefined}
+        >Afgelopen jaar</a
+      >
+    </nav>
+
+    <h1 class="page-title">Jouw vinyl matches</h1>
+    <p class="page-subtitle">Gebaseerd op jouw Spotify luistergeschiedenis</p>
+
+    <div class="filter-bar">
+      <button class="filter-btn" id="vinyl-filter" aria-pressed="false">
+        <span aria-hidden="true">◉ </span>Alleen met vinyl
+      </button>
+    </div>
+
+    <noscript>
+      <p class="noscript-msg">JavaScript is vereist om je vinyl matches te laden. Schakel JavaScript in om door te gaan.</p>
+    </noscript>
+
+    <div id="results" data-period={timeRange} aria-live="polite" aria-atomic="false"></div>
+    <p id="results-status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+
+    <div class="load-more-wrap">
+      <button id="load-more" style="display:none"><span>Laad meer artiesten</span></button>
+    </div>
+
+    <script>
+      import { getWishlist, saveWishlist } from "../lib/wishlist.js";
+
+      const timeRange = (document.getElementById("results") as HTMLElement).dataset.period!;
+      let offset = 0;
+      let loading = false;
+      let initialLoad = true;
+      let firstRender = true;
+      let toastTimer: ReturnType<typeof setTimeout>;
+
+      function showToast(msg: string) {
+        let toast = document.getElementById("toast") as HTMLElement;
+        if (!toast) {
+          toast = document.createElement("div");
+          toast.id = "toast";
+          toast.className = "toast";
+          toast.setAttribute("role", "status");
+          toast.setAttribute("aria-live", "polite");
+          document.body.appendChild(toast);
+        }
+        toast.textContent = msg;
+        clearTimeout(toastTimer);
+        toast.classList.add("show");
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 2500);
+      }
+
+      function createSkeletonHTML() {
+        let html = "";
+        for (let i = 0; i < 3; i++) {
+          html += `
+        <div class="artist-block skeleton-block">
+          <div class="artist-header">
+            <div class="skeleton skeleton-title"></div>
+          </div>
+          <div class="albums-grid">
+            ${[1, 2, 3]
+              .map(
+                () => `
+              <div class="album-card">
+                <div class="skeleton skeleton-cover"></div>
+                <div class="album-info">
+                  <div class="skeleton skeleton-text"></div>
+                  <div class="skeleton skeleton-text-sm"></div>
+                </div>
+              </div>
+            `,
+              )
+              .join("")}
+          </div>
+        </div>
+      `;
+        }
+        return html;
+      }
+
+      const imgSizes = "(min-width: 1024px) 280px, (min-width: 640px) 240px, calc(50vw - 32px)";
+
+      function createArtistHTML(artist: any, albums: any[], prioritizeFirst = false) {
+        let html = `
+      <header class="artist-header">
+        <h2 class="artist-name">${artist.name}</h2>
+        <span class="artist-count">${artist.totalTracks} tracks</span>
+      </header>
+      <ul class="albums-grid">
+    `;
+
+        albums.forEach((album, albumIndex) => {
+          const isPriority = prioritizeFirst && albumIndex === 0;
+          const imgAttrs = album.image
+            ? `src="${album.image}"
+               ${album.imageMedium ? `srcset="${album.imageMedium} 300w, ${album.image} 640w" sizes="${imgSizes}"` : ""}
+               width="640" height="640"
+               loading="${isPriority ? "eager" : "lazy"}"
+               ${isPriority ? 'fetchpriority="high"' : ""}`.trim()
+            : "";
+
+          html += `
+        <li><article class="album-card">
+          <div class="album-cover">
+            ${
+              album.image
+                ? `<img ${imgAttrs} alt="${album.name}" />`
+                : `<div class="album-cover-placeholder"><span>LP</span></div>`
+            }
+            <button
+              class="wishlist-btn"
+data-album='${JSON.stringify({ id: album.id, name: album.name, artist: artist.name, image: album.image, releaseYear: album.releaseYear, vinyl: album.vinyl }).replace(/'/g, "&#39;")}'              aria-label="Toevoegen aan wishlist: ${album.name}"
+            >♡</button>
+          </div>
+          <div class="album-info">
+            <p class="album-name">${album.name}</p>
+            <p class="album-year">${album.releaseYear ?? ""}</p>
+            ${
+              album.vinyl.length === 0
+                ? `<p class="no-vinyl">geen vinyl gevonden</p>`
+                : `<ul class="vinyl-list">${album.vinyl
+                    .map(
+                      (r: any) =>
+                        `<li><a href="https://www.discogs.com${r.uri}" target="_blank" rel="noopener">${r.title} (${r.year ?? "onbekend"})</a></li>`,
+                    )
+                    .join("")}</ul>`
+            }
+          </div>
+        </article></li>
+      `;
+        });
+
+        html += `</ul>`;
+        return html;
+      }
+
+      async function loadResults() {
+        if (loading) return;
+        loading = true;
+
+        const container = document.getElementById("results")!;
+        const btn = document.getElementById("load-more") as HTMLButtonElement;
+
+        const status = document.getElementById("results-status")!;
+        status.textContent = "Resultaten laden...";
+
+        if (initialLoad) {
+          container.innerHTML = createSkeletonHTML();
+        } else {
+          btn.querySelector("span")!.textContent = "Laden...";
+          btn.disabled = true;
+
+          const skeletonEl = document.createElement("div");
+          skeletonEl.id = "load-skeleton";
+          skeletonEl.innerHTML = `
+    <div class="artist-block skeleton-block">
+      <div class="artist-header">
+        <div class="skeleton skeleton-title"></div>
+      </div>
+      <div class="albums-grid">
+        ${[1, 2, 3]
+          .map(
+            () => `
+          <div class="album-card">
+            <div class="skeleton skeleton-cover"></div>
+            <div class="album-info">
+              <div class="skeleton skeleton-text"></div>
+              <div class="skeleton skeleton-text-sm"></div>
+            </div>
+          </div>
+        `,
+          )
+          .join("")}
+      </div>
+    </div>
+  `;
+          document.getElementById("results")!.appendChild(skeletonEl);
+        }
+
+        try {
+          const wasInitial = initialLoad;
+          const res = await fetch(`/api/results?period=${timeRange}&offset=${offset}`);
+
+          if (res.status === 401) {
+            window.location.href = "/?error=token_failed";
+            return;
+          }
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+          const data = await res.json();
+
+          if (initialLoad) {
+            container.innerHTML = "";
+            initialLoad = false;
+          }
+
+          const skeletonEl = document.getElementById("load-skeleton");
+          if (skeletonEl) skeletonEl.remove();
+
+          if (data.length === 0) {
+            if (wasInitial) {
+              container.innerHTML = `
+                <div class="error-state">
+                  <p>Geen top artiesten gevonden voor deze periode.</p>
+                  <a href="?period=long_term" class="retry-btn">Probeer een langere periode</a>
+                </div>`;
+              btn.style.display = "none";
+            } else {
+              btn.querySelector("span")!.textContent = "Geen artiesten meer";
+              btn.disabled = true;
+            }
+            loading = false;
+            return;
+          }
+
+          data.forEach(({ artist, albums }: any, i: number) => {
+            const artistEl = document.createElement("section");
+            artistEl.className = "artist-block";
+            artistEl.innerHTML = createArtistHTML(artist, albums, firstRender && i === 0);
+            container.appendChild(artistEl);
+
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                artistEl.querySelectorAll(".album-card").forEach((card, i) => {
+                  (card as HTMLElement).style.animationDelay = `${i * 0.05}s`;
+                  card.classList.add("loaded");
+                });
+              });
+            });
+          });
+
+          firstRender = false;
+          offset += 5;
+          btn.style.display = "inline-block";
+          btn.querySelector("span")!.textContent = "Laad meer artiesten";
+          btn.disabled = false;
+          status.textContent = `${data.length} artiest${data.length !== 1 ? "en" : ""} geladen`;
+
+          updateWishlistButtons();
+        } catch (e) {
+          const skeletonEl = document.getElementById("load-skeleton");
+          if (skeletonEl) skeletonEl.remove();
+
+          if (initialLoad) {
+            container.innerHTML = `
+              <div class="error-state">
+                <p>Er ging iets mis bij het laden van je matches.</p>
+                <button class="retry-btn" id="retry-btn">Probeer opnieuw</button>
+              </div>`;
+          } else {
+            btn.querySelector("span")!.textContent = "Probeer opnieuw";
+            btn.disabled = false;
+          }
+          status.textContent = "Fout bij laden";
+        }
+
+        loading = false;
+      }
+
+      function updateWishlistCount() {
+        const count = getWishlist().length;
+        const el = document.getElementById("wishlist-count");
+        if (el) el.textContent = String(count);
+      }
+
+      function updateWishlistButtons() {
+        const wishlist = getWishlist();
+        const ids = wishlist.map((a: any) => a.id);
+        document.querySelectorAll(".wishlist-btn").forEach((btn) => {
+          const album = JSON.parse((btn as HTMLElement).dataset.album!);
+          const saved = ids.includes(album.id);
+          btn.classList.toggle("saved", saved);
+          btn.textContent = saved ? "♥" : "♡";
+          (btn as HTMLElement).setAttribute("aria-label", saved ? `Verwijderen uit wishlist: ${album.name}` : `Toevoegen aan wishlist: ${album.name}`);
+        });
+      }
+
+      document.addEventListener("click", (e) => {
+        if ((e.target as Element).closest("#retry-btn")) {
+          loadResults();
+          return;
+        }
+
+        const btn = (e.target as Element).closest(".wishlist-btn");
+        if (!btn) return;
+
+        const album = JSON.parse((btn as HTMLElement).dataset.album!);
+        let wishlist = getWishlist();
+        const exists = wishlist.findIndex((a: any) => a.id === album.id);
+        const adding = exists < 0;
+
+        if (exists >= 0) {
+          wishlist.splice(exists, 1);
+        } else {
+          wishlist.push(album);
+        }
+
+        saveWishlist(wishlist);
+        updateWishlistCount();
+        updateWishlistButtons();
+        showToast(adding ? "Toegevoegd aan wishlist ♥" : "Verwijderd uit wishlist");
+      });
+
+      document.getElementById("load-more")!.addEventListener("click", loadResults);
+
+      updateWishlistCount();
+      loadResults();
+
+      document.getElementById("vinyl-filter")!.addEventListener("click", function () {
+        const active = this.getAttribute("aria-pressed") === "true";
+        this.setAttribute("aria-pressed", String(!active));
+        document.getElementById("results")!.classList.toggle("vinyl-only", !active);
+      });
+    </script>
+  </main>
+</Layout>
