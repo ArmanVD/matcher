@@ -2,12 +2,24 @@ import { getValidToken } from "../../lib/spotifyAuth.js";
 import { getWishlistItems, addWishlistItem, removeWishlistItem } from "../../lib/db.js";
 
 function getUserId(cookies) {
-  return cookies.get("spotify_user_id")?.value ?? null;
+  const spotifyId = cookies.get("spotify_user_id")?.value;
+  if (spotifyId) return spotifyId;
+  const lastfmUsername = cookies.get("lastfm_username")?.value;
+  if (lastfmUsername) return `lastfm:${lastfmUsername}`;
+  return null;
+}
+
+function isAuthorized(cookies) {
+  return !!(
+    cookies.get("lastfm_username")?.value ||
+    cookies.get("spotify_access_token")?.value ||
+    cookies.get("spotify_refresh_token")?.value
+  );
 }
 
 export async function GET({ cookies }) {
-  const token = await getValidToken(cookies);
-  if (!token) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
+  if (!isAuthorized(cookies))
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
 
   const userId = getUserId(cookies);
   if (!userId) return new Response(JSON.stringify([]), { status: 200 });
@@ -18,8 +30,8 @@ export async function GET({ cookies }) {
 }
 
 export async function POST({ cookies, request }) {
-  const token = await getValidToken(cookies);
-  if (!token) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
+  if (!isAuthorized(cookies))
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
 
   const userId = getUserId(cookies);
   if (!userId) return new Response(JSON.stringify({ error: "no user id" }), { status: 400 });
@@ -30,8 +42,8 @@ export async function POST({ cookies, request }) {
 }
 
 export async function DELETE({ cookies, request }) {
-  const token = await getValidToken(cookies);
-  if (!token) return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
+  if (!isAuthorized(cookies))
+    return new Response(JSON.stringify({ error: "unauthorized" }), { status: 401 });
 
   const userId = getUserId(cookies);
   if (!userId) return new Response(JSON.stringify({ error: "no user id" }), { status: 400 });

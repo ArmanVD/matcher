@@ -1,13 +1,19 @@
 ---
 import Layout from "../layouts/Layout.astro";
-import { getUser } from "../lib/spotify.js";
+import { getUser as getSpotifyUser } from "../lib/spotify.js";
+import { getUser as getLastfmUser } from "../lib/lastfm.js";
 import { getValidToken } from "../lib/spotifyAuth.js";
 
 const accessToken = await getValidToken(Astro.cookies);
-if (!accessToken) return Astro.redirect("/");
+const lastfmUsername = Astro.cookies.get("lastfm_username")?.value;
+
+if (!accessToken && !lastfmUsername) return Astro.redirect("/");
 
 const timeRange = Astro.url.searchParams.get("period") ?? "medium_term";
-const user = await getUser(accessToken);
+const isLastfm = !!lastfmUsername;
+const user = isLastfm
+  ? await getLastfmUser(lastfmUsername)
+  : await getSpotifyUser(accessToken);
 ---
 
 <Layout title="Jouw vinyl matches" description="Bekijk welke albums uit jouw Spotify luistergeschiedenis beschikbaar zijn op vinyl via Discogs.">
@@ -571,7 +577,7 @@ const user = await getUser(accessToken);
     </nav>
 
     <h1 class="page-title">Jouw vinyl matches</h1>
-    <p class="page-subtitle">Gebaseerd op jouw Spotify luistergeschiedenis</p>
+    <p class="page-subtitle">Gebaseerd op jouw {isLastfm ? "Last.fm" : "Spotify"} luistergeschiedenis</p>
 
     <div class="filter-bar">
       <button class="filter-btn" id="vinyl-filter" aria-pressed="false">
@@ -583,7 +589,7 @@ const user = await getUser(accessToken);
       <p class="noscript-msg">JavaScript is vereist om je vinyl matches te laden. Schakel JavaScript in om door te gaan.</p>
     </noscript>
 
-    <div id="results" data-period={timeRange} aria-live="polite" aria-atomic="false"></div>
+    <div id="results" data-period={timeRange} data-source={isLastfm ? "lastfm" : "spotify"} aria-live="polite" aria-atomic="false"></div>
     <p id="results-status" class="sr-only" aria-live="polite" aria-atomic="true"></p>
 
     <div class="load-more-wrap">
@@ -591,7 +597,9 @@ const user = await getUser(accessToken);
     </div>
 
     <script>
-      const timeRange = (document.getElementById("results") as HTMLElement).dataset.period!;
+      const resultsEl = document.getElementById("results") as HTMLElement;
+      const timeRange = resultsEl.dataset.period!;
+      const isLastfm = resultsEl.dataset.source === "lastfm";
       let offset = 0;
       let loading = false;
       let initialLoad = true;
@@ -650,7 +658,7 @@ const user = await getUser(accessToken);
         let html = `
       <header class="artist-header">
         <h2 class="artist-name">${artist.name}</h2>
-        <span class="artist-count">${artist.totalTracks} tracks</span>
+        <span class="artist-count">${artist.totalTracks} ${isLastfm ? "plays" : "tracks"}</span>
       </header>
       <ul class="albums-grid">
     `;
@@ -766,11 +774,19 @@ data-album='${JSON.stringify({ id: album.id, name: album.name, artist: artist.na
 
           if (data.length === 0) {
             if (wasInitial) {
-              container.innerHTML = `
-                <div class="error-state">
-                  <p>Geen top artiesten gevonden voor deze periode.</p>
-                  <a href="?period=long_term" class="retry-btn">Probeer een langere periode</a>
-                </div>`;
+              if (isLastfm) {
+                container.innerHTML = `
+                  <div class="error-state">
+                    <p>Nog geen luistergeschiedenis gevonden.</p>
+                    <p style="margin-top: 12px; font-size: 16px; color: rgba(245,239,214,0.4); letter-spacing: 1px; text-transform: uppercase;">Zorg dat Spotify Scrobbling aanstaat in je <a href="https://www.last.fm/settings/applications" target="_blank" rel="noopener" style="color: var(--orange); text-decoration: none;">Last.fm instellingen</a> en luister wat muziek. Na 1–2 dagen verschijnen hier jouw vinyl matches.</p>
+                  </div>`;
+              } else {
+                container.innerHTML = `
+                  <div class="error-state">
+                    <p>Geen top artiesten gevonden voor deze periode.</p>
+                    <a href="?period=long_term" class="retry-btn">Probeer een langere periode</a>
+                  </div>`;
+              }
               btn.style.display = "none";
             } else {
               btn.querySelector("span")!.textContent = "Geen artiesten meer";
