@@ -35,7 +35,7 @@ Live at [matcherapp.nl](https://matcherapp.nl)
 **Prerequisites:** Node.js >= 22.12.0
 
 ```bash
-git clone https://github.com/your-username/matcher.git
+git clone https://github.com/armanvd/matcher.git
 cd matcher
 npm install
 ```
