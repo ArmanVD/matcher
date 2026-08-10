@@ -1,31 +1,21 @@
-import { readFileSync, writeFileSync } from "fs";
-
-const RATE_LIMIT_FILE = "/tmp/spotify_rate_limit.json";
-
-function getRateLimitedUntil() {
-  try {
-    const data = JSON.parse(readFileSync(RATE_LIMIT_FILE, "utf8"));
-    return data.until ?? 0;
-  } catch {
-    return 0;
+/**
+ * Fout met een machineleesbare `code` zodat de aanroeper er gericht op kan reageren:
+ * - "forbidden"    → token ongeldig of mist de user-top-read-scope → nieuwe consent nodig.
+ * - "rate_limited" → Spotify rate limit → nette melding, later opnieuw (retryAfter in sec).
+ */
+export class SpotifyError extends Error {
+  constructor(code, message, retryAfter) {
+    super(message);
+    this.name = "SpotifyError";
+    this.code = code;
+    this.retryAfter = retryAfter;
   }
-}
-
-function setRateLimitedUntil(until) {
-  try {
-    writeFileSync(RATE_LIMIT_FILE, JSON.stringify({ until }));
-  } catch {}
 }
 
 export async function getTopTracks(accessToken, timeRange = "medium_term") {
-  const rateLimitedUntil = getRateLimitedUntil();
-  if (Date.now() < rateLimitedUntil) {
-    return [];
-  }
-
   const offsets = [0, 49, 98, 149];
 
-  const fetches = await Promise.all(
+  const responses = await Promise.all(
     offsets.map((offset) =>
       fetch(`https://api.spotify.com/v1/me/top/tracks?limit=50&offset=${offset}&time_range=${timeRange}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
@@ -33,19 +23,23 @@ export async function getTopTracks(accessToken, timeRange = "medium_term") {
     ),
   );
 
-  const results = await Promise.all(fetches.map(async (r) => {
-    if (r.status === 429) {
-      const retryAfter = parseInt(r.headers.get("Retry-After") ?? "60");
-      setRateLimitedUntil(Date.now() + retryAfter * 1000);
-      return { items: [] };
-    }
-    if (!r.ok) {
-      return { items: [] };
-    }
-    return r.json();
-  }));
+  // 401/403: token is ongeldig of mist de user-top-read-scope (bv. een oude toestemming
+  // van vóór de scope werd toegevoegd). Doorgooien zodat de aanroeper de gebruiker naar
+  // een nieuwe consent stuurt, i.p.v. stilletjes "geen data" te tonen.
+  if (responses.some((r) => r.status === 401 || r.status === 403)) {
+    throw new SpotifyError("forbidden", "Spotify weigert de top-data (token/scope).");
+  }
 
-  const combined = results.flatMap((data) => data.items ?? []);
+  // 429: alleen deze request faalt. NIET globaal wegschrijven — dat blokkeerde voorheen
+  // álle gebruikers tegelijk via één gedeeld /tmp-bestand.
+  const limited = responses.find((r) => r.status === 429);
+  if (limited) {
+    const retryAfter = parseInt(limited.headers.get("Retry-After") ?? "30", 10);
+    throw new SpotifyError("rate_limited", "Spotify rate limit bereikt.", retryAfter);
+  }
+
+  const datas = await Promise.all(responses.map((r) => (r.ok ? r.json() : { items: [] })));
+  const combined = datas.flatMap((data) => data.items ?? []);
 
   // Verwijder duplicaten op track ID
   const seen = new Set();
@@ -110,23 +104,19 @@ export function groupByArtist(tracks) {
 }
 
 export async function getUser(accessToken) {
-  const response = await fetch("https://api.spotify.com/v1/me", {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    if (response.status === 429) {
-      const retryAfter = parseInt(response.headers.get("Retry-After") ?? "60");
-      setRateLimitedUntil(Date.now() + retryAfter * 1000);
-    }
+  // Header-info (naam/avatar): faalt zacht — bij een fout gewoon leeg, geen throw,
+  // zodat het dashboard blijft laden ook als /me even niet lukt.
+  try {
+    const response = await fetch("https://api.spotify.com/v1/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) return { name: null, image: null };
+    const data = await response.json();
+    return {
+      name: data.display_name,
+      image: data.images?.[0]?.url ?? null,
+    };
+  } catch {
     return { name: null, image: null };
   }
-
-  const data = await response.json();
-  return {
-    name: data.display_name,
-    image: data.images?.[0]?.url ?? null,
-  };
 }

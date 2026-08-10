@@ -608,9 +608,22 @@ data-album='${JSON.stringify({ id: album.id, name: album.name, artist: artist.na
             window.location.href = "/?error=token_failed";
             return;
           }
+          if (res.status === 403) {
+            // Token mist waarschijnlijk de user-top-read-scope (oude toestemming van
+            // vóór de scope-uitbreiding). Forceer één keer een nieuwe Spotify-consent
+            // (show_dialog); daarna niet nog eens, om een redirect-loop te voorkomen.
+            if (!sessionStorage.getItem("matcher_reauth_tried")) {
+              sessionStorage.setItem("matcher_reauth_tried", "1");
+              window.location.href = "/api/auth/login?switch=true";
+              return;
+            }
+            throw new Error("reauth_failed");
+          }
+          if (res.status === 429) throw new Error("rate_limited");
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
           const data = await res.json();
+          sessionStorage.removeItem("matcher_reauth_tried");
 
           if (initialLoad) {
             container.innerHTML = "";
@@ -672,17 +685,22 @@ data-album='${JSON.stringify({ id: album.id, name: album.name, artist: artist.na
           const skeletonEl = document.getElementById("load-skeleton");
           if (skeletonEl) skeletonEl.remove();
 
+          const rateLimited = e instanceof Error && e.message === "rate_limited";
+          const msg = rateLimited
+            ? "Spotify is even druk (rate limit). Probeer het over een minuutje opnieuw."
+            : "Er ging iets mis bij het laden van je matches.";
+
           if (initialLoad) {
             container.innerHTML = `
               <div class="error-state">
-                <p>Er ging iets mis bij het laden van je matches.</p>
+                <p>${msg}</p>
                 <button class="retry-btn" id="retry-btn">Probeer opnieuw</button>
               </div>`;
           } else {
             btn.querySelector("span")!.textContent = "Probeer opnieuw";
             btn.disabled = false;
           }
-          status.textContent = "Fout bij laden";
+          status.textContent = rateLimited ? "Rate limit" : "Fout bij laden";
         }
 
         loading = false;

@@ -83,7 +83,26 @@ export async function GET({ request, cookies }) {
     let artists = getCached(tracksCacheKey);
 
     if (!artists) {
-      const tracks = await getTopTracks(accessToken, timeRange);
+      let tracks;
+      try {
+        tracks = await getTopTracks(accessToken, timeRange);
+      } catch (err) {
+        // Token mist rechten/scope → client stuurt gebruiker naar nieuwe consent.
+        if (err?.code === "forbidden") {
+          return new Response(JSON.stringify({ error: "reauth" }), {
+            status: 403,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        // Rate limit → nette melding, alleen deze gebruiker.
+        if (err?.code === "rate_limited") {
+          return new Response(JSON.stringify({ error: "rate_limited", retryAfter: err.retryAfter ?? 30 }), {
+            status: 429,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
+        throw err;
+      }
       artists = groupByArtist(tracks);
       setCached(tracksCacheKey, artists);
     }
