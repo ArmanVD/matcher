@@ -99,4 +99,4 @@ On the server, PM2 runs the Node.js server and Nginx acts as a reverse proxy wit
 
 ---
 
-Made by [avek.dev](https://avek.dev)
+Made by [avek.studio](https://avek.studio)

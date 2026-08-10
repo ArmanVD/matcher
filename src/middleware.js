@@ -7,11 +7,11 @@ export const onRequest = defineMiddleware(async (_context, next) => {
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://analytics.avek.dev",
+      "script-src 'self' 'unsafe-inline' https://analytics.avek.studio",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' https://i.scdn.co https://lastfm.freetls.fastly.net data:",
       "font-src 'self'",
-      "connect-src 'self' https://api.spotify.com https://api.discogs.com https://accounts.spotify.com https://analytics.avek.dev",
+      "connect-src 'self' https://api.spotify.com https://api.discogs.com https://accounts.spotify.com https://analytics.avek.studio",
       "frame-ancestors 'none'",
     ].join("; "),
   );
