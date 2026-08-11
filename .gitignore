@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Lokaal deploy-script (bevat server-IP/paden, niet in publieke repo)
+deploy.sh
